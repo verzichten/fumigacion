@@ -1,0 +1,38 @@
+"use client"
+
+import { Button } from "@/components/ui/button"
+import { Menu, UserCircle } from "lucide-react"
+
+interface HeaderProps {
+  onMenuClick: () => void
+}
+
+export function Header({ onMenuClick }: HeaderProps) {
+  return (
+    <header className="sticky top-0 z-30 flex h-16 items-center border-b border-stone-200 bg-white px-4 shadow-sm dark:border-stone-800 dark:bg-stone-900 md:px-6">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="mr-2 md:hidden"
+        onClick={onMenuClick}
+      >
+        <Menu className="h-5 w-5" />
+        <span className="sr-only">Toggle Menu</span>
+      </Button>
+      <div className="flex items-center gap-2 font-semibold">
+        <span className="hidden md:inline-block">Panel de Control</span>
+      </div>
+      <div className="ml-auto flex items-center space-x-4">
+        <div className="flex items-center gap-2 text-sm">
+          <span className="hidden text-stone-500 dark:text-stone-400 md:inline-block">
+            Admin Usuario
+          </span>
+          <Button variant="ghost" size="icon" className="rounded-full">
+            <UserCircle className="h-6 w-6" />
+            <span className="sr-only">User menu</span>
+          </Button>
+        </div>
+      </div>
+    </header>
+  )
+}
