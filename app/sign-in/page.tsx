@@ -81,7 +81,7 @@ export default function SignInPage() {
       localStorage.setItem('user', JSON.stringify(data.user));
 
       toast.success("Inicio de sesión exitoso");
-      router.push("/"); // Redirect to home page or dashboard
+      router.push("/dashboard"); // Redirect to dashboard
     } catch (error: any) {
       toast.error(error.message || "Error al iniciar sesión");
     } finally {

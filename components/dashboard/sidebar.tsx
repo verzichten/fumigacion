@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useState } from "react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
   Users,
@@ -16,23 +16,23 @@ import {
   ChevronDown,
   ChevronRight,
   LogOut,
-  Menu
-} from "lucide-react"
+  Menu,
+} from "lucide-react";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function Sidebar({ className }: SidebarProps) {
-  const pathname = usePathname()
+  const pathname = usePathname();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
     clientes: true,
     servicios: true,
     equipo: true,
     configuracion: false,
-  })
+  });
 
   const toggleMenu = (key: string) => {
-    setOpenMenus((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
+    setOpenMenus((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const menuItems = [
     {
@@ -59,7 +59,7 @@ export function Sidebar({ className }: SidebarProps) {
       icon: UserPlus,
       items: [
         { href: "/dashboard/usuarios/asesores", label: "Listado de Asesores" },
-        { href: "/dashboard/usuarios/fumigadores", label: "Listado de Fumigadores" },
+        { href: "/dashboard/usuarios/tecnicos", label: "Listado de Tecnicos" },
         { href: "/dashboard/usuarios/nuevo", label: "Registrar Usuario" },
       ],
     },
@@ -69,15 +69,23 @@ export function Sidebar({ className }: SidebarProps) {
       icon: Settings,
       items: [
         { href: "/dashboard/configuracion/perfiles", label: "Perfiles" },
-        { href: "/dashboard/configuracion/servicios", label: "Servicios Ofrecidos" },
+        {
+          href: "/dashboard/configuracion/servicios",
+          label: "Servicios Ofrecidos",
+        },
         { href: "/dashboard/configuracion/localidades", label: "Localidades" },
         { href: "/dashboard/configuracion/zonas", label: "Zonas Locativas" },
       ],
     },
-  ]
+  ];
 
   return (
-    <div className={cn("pb-12 min-h-screen bg-stone-100 dark:bg-stone-900 border-r border-stone-200 dark:border-stone-800", className)}>
+    <div
+      className={cn(
+        "pb-12 min-h-screen bg-stone-100 dark:bg-stone-900 border-r border-stone-200 dark:border-stone-800",
+        className,
+      )}
+    >
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
           <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
@@ -135,11 +143,14 @@ export function Sidebar({ className }: SidebarProps) {
         </div>
       </div>
       <div className="px-3 py-2 mt-auto">
-        <Button variant="ghost" className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20">
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+        >
           <LogOut className="mr-2 h-4 w-4" />
           Cerrar Sesión
         </Button>
       </div>
     </div>
-  )
+  );
 }
