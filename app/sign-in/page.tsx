@@ -57,11 +57,28 @@ export default function SignInPage() {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    // Here you would typically make an API call to authenticate the user
-    // For now, we'll simulate a successful login and redirect
+    
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await fetch('/api/sign-in', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al iniciar sesión');
+      }
+
+      // Store token and user info
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
       toast.success("Inicio de sesión exitoso");
       router.push("/"); // Redirect to home page or dashboard
