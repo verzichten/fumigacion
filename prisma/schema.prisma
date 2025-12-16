@@ -1,0 +1,214 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id                Int               @id @default(autoincrement())
+  nombre            String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  correo            String?
+  nit               String?
+  numero            String?
+  pagina            String?
+  clientes          Cliente[]
+  direcciones       Direccion[]
+  empresas          Empresa[]
+  geolocalizaciones Geolocalizacion[]
+  metodosPago       MetodoPago[]
+  ordenesServicio   OrdenServicio[]
+  servicios         Servicio[]
+  tiposServicios    TipoServicio[]
+  usuarios          Usuario[]
+  zonas             Zona[]
+}
+
+model Zona {
+  id        Int             @id @default(autoincrement())
+  tenantId  Int
+  nombre    String
+  estado    Boolean         @default(true)
+  deletedAt DateTime?
+  ordenes   OrdenServicio[]
+  tenant    Tenant          @relation(fields: [tenantId], references: [id])
+}
+
+model Empresa {
+  id              Int             @id @default(autoincrement())
+  nombre          String
+  tenantId        Int
+  createdAt       DateTime        @default(now())
+  clientes        Cliente[]
+  tenant          Tenant          @relation(fields: [tenantId], references: [id])
+  ordenesServicio OrdenServicio[]
+  servicios       Servicio[]
+  TipoServicio    TipoServicio[]
+  usuarios        Usuario[]
+}
+
+model Usuario {
+  id                 Int               @id @default(autoincrement())
+  tenantId           Int
+  username           String            @unique
+  email              String            @unique
+  password           String
+  activo             Boolean           @default(true)
+  nombre             String
+  apellido           String
+  telefono           String?
+  tipoDocumento      String?
+  numeroDocumento    String?           @unique
+  rol                Rol
+  empresaId          Int?
+  createdAt          DateTime          @default(now())
+  geolocalizaciones  Geolocalizacion[]
+  serviciosCreados   OrdenServicio[]   @relation("ServiciosCreados")
+  serviciosAsignados OrdenServicio[]   @relation("ServiciosAsignados")
+  empresa            Empresa?          @relation(fields: [empresaId], references: [id])
+  tenant             Tenant            @relation(fields: [tenantId], references: [id])
+}
+
+model Cliente {
+  id              Int             @id @default(autoincrement())
+  tenantId        Int
+  nombre          String?
+  apellido        String?
+  telefono        String
+  correo          String?
+  empresaId       Int?
+  createdAt       DateTime        @default(now())
+  numeroDocumento String?
+  tipoDocumento   String?
+  empresa         Empresa?        @relation(fields: [empresaId], references: [id])
+  tenant          Tenant          @relation(fields: [tenantId], references: [id])
+  direcciones     Direccion[]
+  servicios       OrdenServicio[]
+}
+
+model Direccion {
+  id              Int             @id @default(autoincrement())
+  tenantId        Int
+  clienteId       Int
+  direccion       String
+  piso            String?
+  bloque          String?
+  unidad          String?
+  barrio          String?
+  municipio       String?
+  createdAt       DateTime        @default(now())
+  cliente         Cliente         @relation(fields: [clienteId], references: [id])
+  tenant          Tenant          @relation(fields: [tenantId], references: [id])
+  ordenesServicio OrdenServicio[]
+}
+
+model Servicio {
+  id        Int             @id @default(autoincrement())
+  tenantId  Int
+  nombre    String
+  activo    Boolean         @default(true)
+  empresaId Int?
+  ordenes   OrdenServicio[]
+  empresa   Empresa?        @relation(fields: [empresaId], references: [id])
+  tenant    Tenant          @relation(fields: [tenantId], references: [id])
+}
+
+model TipoServicio {
+  id        Int             @id @default(autoincrement())
+  tenantId  Int
+  nombre    String
+  activo    Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  empresaId Int?
+  ordenes   OrdenServicio[]
+  Empresa   Empresa?        @relation(fields: [empresaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenant    Tenant          @relation(fields: [tenantId], references: [id])
+}
+
+model OrdenServicio {
+  id                 Int               @id @default(autoincrement())
+  tenantId           Int
+  clienteId          Int
+  servicioId         Int
+  creadoPorId        Int?
+  tecnicoId          Int?
+  direccionId        Int?
+  direccionTexto     String
+  piso               String?
+  bloque             String?
+  unidad             String?
+  barrio             String?
+  municipio          String?
+  departamento       String?
+  estado             EstadoServicio
+  tipoServicioId     Int?
+  fechaVisita        DateTime?
+  horaInicio         DateTime?
+  horaFin            DateTime?
+  observacion        String?
+  nivelInfestacion   String?
+  condicionesHigiene String?
+  condicionesLocal   String?
+  valorCotizado      Decimal?
+  valorPagado        Decimal?
+  valorRepuestos     Decimal?          @default(0)
+  metodoPagoId       Int?
+  numeroOrden        String?
+  empresaId          Int?
+  createdAt          DateTime          @default(now())
+  zonaId             Int?
+  geolocalizaciones  Geolocalizacion[]
+  cliente            Cliente           @relation(fields: [clienteId], references: [id])
+  creadoPor          Usuario?          @relation("ServiciosCreados", fields: [creadoPorId], references: [id])
+  direccion          Direccion?        @relation(fields: [direccionId], references: [id])
+  empresa            Empresa?          @relation(fields: [empresaId], references: [id])
+  metodoPago         MetodoPago?       @relation(fields: [metodoPagoId], references: [id])
+  servicio           Servicio          @relation(fields: [servicioId], references: [id])
+  tecnico            Usuario?          @relation("ServiciosAsignados", fields: [tecnicoId], references: [id])
+  tenant             Tenant            @relation(fields: [tenantId], references: [id])
+  tipoServicio       TipoServicio?     @relation(fields: [tipoServicioId], references: [id])
+  zona               Zona?             @relation(fields: [zonaId], references: [id])
+}
+
+model Geolocalizacion {
+  id        Int           @id @default(autoincrement())
+  tenantId  Int
+  usuarioId Int
+  ordenId   Int
+  latitud   Decimal?
+  longitud  Decimal?
+  llegada   DateTime
+  salida    DateTime?
+  createdAt DateTime      @default(now())
+  orden     OrdenServicio @relation(fields: [ordenId], references: [id])
+  tenant    Tenant        @relation(fields: [tenantId], references: [id])
+  usuario   Usuario       @relation(fields: [usuarioId], references: [id])
+}
+
+model MetodoPago {
+  id       Int             @id @default(autoincrement())
+  tenantId Int
+  nombre   String
+  activo   Boolean         @default(true)
+  tenant   Tenant          @relation(fields: [tenantId], references: [id])
+  ordenes  OrdenServicio[]
+}
+
+enum Rol {
+  ADMIN
+  ASESOR
+  TECNICO
+}
+
+enum EstadoServicio {
+  SERVICIO_NUEVO
+  PROGRAMADO
+  EN_PROCESO
+  SERVICIO_LISTO
+  CANCELADO
+}
