@@ -45,6 +45,19 @@ async function main() {
     console.log(`Created Zona: ${zona.nombre} (ID: ${zona.id})`);
   }
 
+  console.log("🌱 Seeding Empresas...");
+  const empresaNames = ["Fumigación", "Servicio Técnico"];
+
+  for (const nombre of empresaNames) {
+    const empresa = await prisma.empresa.create({
+      data: {
+        nombre,
+        tenantId: 1,
+      },
+    });
+    console.log(`Created Empresa: ${empresa.nombre} (ID: ${empresa.id})`);
+  }
+
   console.log("🌱 Seeding Servicios...");
   const servicioNames = [
     "A: CONTROL DE CUCARACHAS",

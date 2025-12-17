@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       userId: user.id,
       username: user.username,
       role: user.rol,
-      aprobado: user.aprobado,
+      aprobado: user.aprobado ?? false,
     });
 
     // Eliminar password de la respuesta

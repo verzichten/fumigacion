@@ -34,17 +34,42 @@ import {
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
+// Define the type for sub-items within a parent menu
+interface SubMenuItem {
+  href: string;
+  label: string;
+}
+
+// Define a type for menu items that are direct links
+interface MenuItemWithHref {
+  key: string;
+  label: string;
+  icon: React.ElementType;
+  href: string;
+  items?: never; // This ensures it cannot have 'items'
+}
+
+// Define a type for menu items that are parents with sub-items
+interface MenuItemWithSubItems {
+  key: string;
+  label: string;
+  icon: React.ElementType;
+  items: SubMenuItem[];
+  href?: never; // This ensures it cannot have 'href' directly
+}
+
+type MenuConfig = MenuItemWithHref | MenuItemWithSubItems;
+
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const menuItems = [
+  const menuItems: MenuConfig[] = [
     {
       key: "dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
       href: "/dashboard",
-      items: [], // No sub-items for dashboard
     },
     {
       key: "clientes",
@@ -90,7 +115,7 @@ export function Sidebar({ className }: SidebarProps) {
     },
   ];
 
-  const initialOpenMenus = menuItems.reduce((acc, menu) => {
+  const initialOpenMenus = menuItems.reduce((acc: Record<string, boolean>, menu) => {
     if (menu.items && menu.items.length > 0) {
       const isActiveParent = menu.items.some(item => pathname.startsWith(item.href));
       acc[menu.key] = isActiveParent;
@@ -172,71 +197,76 @@ export function Sidebar({ className }: SidebarProps) {
             Fumigación App
           </h2>
           <div className="space-y-1">
-            {menuItems.map((menu) => (
-              !menu.items || menu.items.length === 0 ? ( // Render single link items (like Dashboard)
-                <Button
-                  key={menu.key}
-                  asChild
-                  variant="ghost"
-                  className={cn(
-                    "w-full justify-start transition-all duration-200 ease-in-out",
-                    pathname === menu.href
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-sidebar-primary font-medium"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  )}
-                >
-                  <Link href={menu.href}>
-                    <menu.icon className="mr-2 h-4 w-4" />
-                    {menu.label}
-                  </Link>
-                </Button>
-              ) : ( // Render expandable menu items
-                <div key={menu.key} className="space-y-1">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground transition-all duration-200 ease-in-out"
-                    onClick={() => toggleMenu(menu.key)}
-                  >
-                    <span className="flex items-center font-semibold">
-                      <menu.icon className="mr-2 h-4 w-4" />
-                      {menu.label}
-                    </span>
-                    {openMenus[menu.key] ? (
-                      <ChevronDown className="h-4 w-4 transition-all duration-200 ease-in-out" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 transition-all duration-200 ease-in-out" />
-                    )}
-                  </Button>
-                  {openMenus[menu.key] && (
-                    <div className="ml-4 space-y-1 border-l border-sidebar-border pl-2">
-                      {menu.items.map((item) => {
-                        const isActive = 
-                          pathname === item.href || 
-                          (pathname.startsWith(item.href + "/") && 
-                           !menu.items.some((sub) => sub.href === pathname));
-                        
-                        return (
-                          <Button
-                            key={item.href}
-                            asChild
-                            variant="ghost"
-                            className={cn(
-                              "w-full justify-start h-8 text-sm transition-all duration-200 ease-in-out",
-                              isActive
-                                ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-sidebar-primary font-medium"
-                                : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                            )}
-                          >
-                            <Link href={item.href}>{item.label}</Link>
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )
-            ))}
-          </div>
+                        {menuItems.map((menu) => {
+                          if (!menu.items || menu.items.length === 0) {
+                            const directLinkMenu = menu as MenuItemWithHref;
+                            return (
+                              <Button
+                                key={directLinkMenu.key}
+                                asChild
+                                variant="ghost"
+                                className={cn(
+                                  "w-full justify-start transition-all duration-200 ease-in-out",
+                                  pathname === directLinkMenu.href
+                                    ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-sidebar-primary font-medium"
+                                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                )}
+                              >
+                                <Link href={directLinkMenu.href}>
+                                  <directLinkMenu.icon className="mr-2 h-4 w-4" />
+                                  {directLinkMenu.label}
+                                </Link>
+                              </Button>
+                            );
+                          } else {
+                            const parentMenu = menu as MenuItemWithSubItems;
+                            return (
+                              <div key={parentMenu.key} className="space-y-1">
+                                <Button
+                                  variant="ghost"
+                                  className="w-full justify-between hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground transition-all duration-200 ease-in-out"
+                                  onClick={() => toggleMenu(parentMenu.key)}
+                                >
+                                  <span className="flex items-center font-semibold">
+                                    <parentMenu.icon className="mr-2 h-4 w-4" />
+                                    {parentMenu.label}
+                                  </span>
+                                  {openMenus[parentMenu.key] ? (
+                                    <ChevronDown className="h-4 w-4 transition-all duration-200 ease-in-out" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4 transition-all duration-200 ease-in-out" />
+                                  )}
+                                </Button>
+                                {openMenus[parentMenu.key] && (
+                                  <div className="ml-4 space-y-1 border-l border-sidebar-border pl-2">
+                                    {parentMenu.items.map((item) => {
+                                      const isActive =
+                                        pathname === item.href ||
+                                        (pathname.startsWith(item.href + "/") &&
+                                         !parentMenu.items.some((sub) => sub.href === pathname));
+            
+                                      return (
+                                        <Button
+                                          key={item.href}
+                                          asChild
+                                          variant="ghost"
+                                          className={cn(
+                                            "w-full justify-start h-8 text-sm transition-all duration-200 ease-in-out",
+                                            isActive
+                                              ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-sidebar-primary font-medium"
+                                              : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                          )}
+                                        >
+                                          <Link href={item.href}>{item.label}</Link>
+                                        </Button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                        })}          </div>
         </div>
       </div>
       <div className="px-3 py-2 mt-auto">
