@@ -68,6 +68,7 @@ model Usuario {
   rol                Rol
   empresaId          Int?
   createdAt          DateTime          @default(now())
+  aprobado           Boolean?          @default(false)
   geolocalizaciones  Geolocalizacion[]
   serviciosCreados   OrdenServicio[]   @relation("ServiciosCreados")
   serviciosAsignados OrdenServicio[]   @relation("ServiciosAsignados")

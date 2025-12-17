@@ -81,7 +81,11 @@ export default function SignInPage() {
       localStorage.setItem('user', JSON.stringify(data.user));
 
       toast.success("Inicio de sesión exitoso");
-      router.push("/dashboard"); // Redirect to dashboard
+      if (data.user.aprobado) {
+        router.push("/dashboard");
+      } else {
+        router.push("/verificacion");
+      }
     } catch (error: any) {
       toast.error(error.message || "Error al iniciar sesión");
     } finally {

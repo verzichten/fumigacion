@@ -73,6 +73,8 @@ export default function NuevoUsuarioPage() {
     Object.entries(formData).forEach(([key, value]) => {
       if (key === "activo") {
         if (value) data.append(key, "on");
+      } else if (key === "empresaId" && value === "null") {
+        data.append(key, "");
       } else {
         data.append(key, value.toString());
       }
@@ -284,6 +286,7 @@ export default function NuevoUsuarioPage() {
                         <SelectValue placeholder="Seleccione una empresa" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="null">Ninguna</SelectItem> {/* Added "Ninguna" option */}
                         {empresas.map((emp) => (
                           <SelectItem key={emp.id} value={emp.id.toString()}>
                             {emp.nombre}

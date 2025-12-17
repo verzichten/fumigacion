@@ -7,6 +7,7 @@ export interface TokenPayload {
   userId: number;
   username: string;
   role: Rol;
+  aprobado: boolean;
 }
 
 export function signToken(payload: TokenPayload): string {
@@ -15,7 +16,9 @@ export function signToken(payload: TokenPayload): string {
 
 export function verifyToken(token: string): TokenPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
+    const payload = jwt.verify(token, JWT_SECRET) as TokenPayload;
+    if (!payload.aprobado) return null;
+    return payload;
   } catch (error) {
     return null;
   }

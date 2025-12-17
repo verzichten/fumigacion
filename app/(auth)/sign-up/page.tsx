@@ -116,12 +116,8 @@ export default function SignUpPage() {
         throw new Error(data.message || 'Error al registrar usuario')
       }
 
-      toast.success("Cuenta creada exitosamente")
-      // Redirect to sign-in page or dashboard
-      router.push('/sign-in')
-      
-      // For now, maybe reset form or just stay there
-      // setFormData({ ... }) 
+      toast.success("Cuenta creada exitosamente");
+      router.push("/verificacion"); 
 
     } catch (error: any) {
       toast.error(error.message)

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Search, Package, Trash2, Edit } from "lucide-react"; 
+import { Plus, Search, Package, Trash2, Edit, Power } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -141,6 +141,35 @@ export default function ServiciosPage() {
     setIsSubmitting(false);
   };
 
+  const handleToggleActive = async (servicio: Servicio) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const data = new FormData();
+    data.append("nombre", servicio.nombre);
+    // If it's currently NOT active, we are activating it, so send "on".
+    // If it IS active, we are deactivating, so don't send "on" (or send "off" if backend supports, usually checkbox logic implies missing = false).
+    // Based on handleSubmit: `if (formData.activo) data.append("activo", "on");`
+    // So to activate: append "on". To deactivate: don't append.
+    if (!servicio.activo) { 
+      data.append("activo", "on");
+    }
+    
+    if (servicio.empresa?.id) {
+      data.append("empresaId", servicio.empresa.id.toString());
+    }
+
+    toast.promise(updateServicio(token, servicio.id, data), {
+      loading: 'Actualizando estado...',
+      success: (result) => {
+        if (result.error) throw new Error(result.error);
+        fetchData();
+        return `Servicio ${!servicio.activo ? 'activado' : 'desactivado'} correctamente`;
+      },
+      error: (err) => `Error: ${err.message}`
+    });
+  };
+
   const handleDeleteClick = (id: number) => {
     setServicioToDelete(id);
     setIsDeleteModalOpen(true);
@@ -255,6 +284,15 @@ export default function ServiciosPage() {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className={`hover:bg-slate-200 ${servicio.activo ? "text-green-600 hover:text-green-700" : "text-slate-400 hover:text-slate-600"}`}
+                                                title={servicio.activo ? "Desactivar servicio" : "Activar servicio"}
+                                                onClick={() => handleToggleActive(servicio)}
+                                            >
+                                                <Power className="h-4 w-4" />
+                                            </Button>
                                             <Button 
                                                 variant="ghost" 
                                                 size="icon" 

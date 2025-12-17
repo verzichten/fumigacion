@@ -157,3 +157,47 @@ export async function getDashboardStats(token: string) {
     return { error: "Error al cargar estadísticas" };
   }
 }
+
+export async function getAllTenants(token: string) {
+  const payload = verifyToken(token);
+  if (!payload) return { error: "No autorizado" };
+
+  try {
+    const tenants = await prisma.tenant.findMany({
+      select: {
+        id: true,
+        nombre: true,
+      },
+      orderBy: {
+        nombre: 'asc',
+      },
+    });
+    return { tenants };
+  } catch (error) {
+    console.error("Error fetching tenants:", error);
+    return { error: "Error al cargar sistemas" };
+  }
+}
+
+export async function switchUserTenant(token: string, newTenantId: number) {
+  const payload = verifyToken(token);
+  if (!payload) return { error: "No autorizado" };
+
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: newTenantId },
+    });
+
+    if (!tenant) return { error: "Sistema no encontrado" };
+
+    await prisma.usuario.update({
+      where: { id: payload.userId },
+      data: { tenantId: newTenantId },
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error switching tenant:", error);
+    return { error: "Error al cambiar de sistema" };
+  }
+}

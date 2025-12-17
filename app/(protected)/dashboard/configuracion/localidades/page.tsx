@@ -1,0 +1,62 @@
+"use client";
+
+import { municipiosAntioquia } from "@/lib/constants/municipios";
+import { useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export default function LocalidadesPage() {
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Localidades de Antioquia</h1>
+        <div className="text-sm text-muted-foreground">
+          Total: {municipiosAntioquia.length} municipios
+        </div>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {municipiosAntioquia.map((municipio) => (
+          <MunicipioCard key={municipio.nombre} municipio={municipio} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MunicipioCard({ municipio }: { municipio: typeof municipiosAntioquia[0] }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <Card className="h-fit">
+      <CardHeader className="p-4">
+        <Button
+          variant="ghost"
+          className="w-full justify-between p-0 h-auto hover:bg-transparent"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <CardTitle className="text-lg font-medium">{municipio.nombre}</CardTitle>
+          {isOpen ? (
+            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          )}
+        </Button>
+      </CardHeader>
+      {isOpen && (
+        <CardContent className="p-4 pt-0">
+          <div className="h-[200px] w-full rounded-md border p-4 overflow-y-auto">
+            <ul className="space-y-2">
+              {municipio.barrios.map((barrio, index) => (
+                <li key={`${barrio}-${index}`} className="text-sm text-muted-foreground">
+                  {barrio}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  );
+}

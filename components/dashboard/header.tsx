@@ -9,7 +9,7 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center border-b border-stone-200 bg-white px-4 shadow-sm dark:border-stone-800 dark:bg-stone-900 md:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 shadow-sm md:px-6">
       <Button
         variant="ghost"
         size="icon"
@@ -24,7 +24,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       </div>
       <div className="ml-auto flex items-center space-x-4">
         <div className="flex items-center gap-2 text-sm">
-          <span className="hidden text-stone-500 dark:text-stone-400 md:inline-block">
+          <span className="hidden text-muted-foreground md:inline-block">
             Admin Usuario
           </span>
           <Button variant="ghost" size="icon" className="rounded-full">

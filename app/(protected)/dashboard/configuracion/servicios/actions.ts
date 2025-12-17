@@ -24,7 +24,6 @@ export async function getServicios(token: string) {
     const servicios = await prisma.servicio.findMany({
       where: {
         tenantId: usuario.tenantId,
-        activo: true, // Only active services
       },
       orderBy: {
         nombre: "asc",

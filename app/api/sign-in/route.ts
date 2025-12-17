@@ -28,6 +28,8 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log("Login attempt:", { username: user.username, activo: user.activo, aprobado: user.aprobado });
+
     if (!user.activo) {
       return NextResponse.json(
         { message: "Cuenta inactiva. Contacte al administrador." },
@@ -50,6 +52,7 @@ export async function POST(request: Request) {
       userId: user.id,
       username: user.username,
       role: user.rol,
+      aprobado: user.aprobado,
     });
 
     // Eliminar password de la respuesta

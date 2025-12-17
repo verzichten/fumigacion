@@ -73,7 +73,8 @@ export async function createUsuario(token: string, formData: FormData) {
         numeroDocumento: numeroDocumento || null,
         rol,
         empresaId,
-        activo
+        activo,
+        aprobado: true, // Set aprobado to true by default for dashboard-created users
       }
     });
 
