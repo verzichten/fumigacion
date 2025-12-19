@@ -11,6 +11,10 @@
     "sb:start": "supabase start",
     "sb:stop": "supabase stop"
   },
+  "overrides": {
+    "react": "$react",
+    "react-dom": "$react-dom"
+  },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
