@@ -45,12 +45,15 @@ model Empresa {
   nombre          String
   tenantId        Int
   createdAt       DateTime        @default(now())
+  estado          Boolean?        @default(true)
   clientes        Cliente[]
   tenant          Tenant          @relation(fields: [tenantId], references: [id])
   ordenesServicio OrdenServicio[]
   servicios       Servicio[]
   TipoServicio    TipoServicio[]
   usuarios        Usuario[]
+
+  @@index([tenantId])
 }
 
 model Usuario {
@@ -65,7 +68,7 @@ model Usuario {
   telefono           String?
   tipoDocumento      String?
   numeroDocumento    String?           @unique
-  rol                Rol
+  rol                Rol?
   empresaId          Int?
   createdAt          DateTime          @default(now())
   aprobado           Boolean?          @default(false)
@@ -74,6 +77,8 @@ model Usuario {
   serviciosAsignados OrdenServicio[]   @relation("ServiciosAsignados")
   empresa            Empresa?          @relation(fields: [empresaId], references: [id])
   tenant             Tenant            @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, rol, activo])
 }
 
 model Cliente {
@@ -91,6 +96,9 @@ model Cliente {
   tenant          Tenant          @relation(fields: [tenantId], references: [id])
   direcciones     Direccion[]
   servicios       OrdenServicio[]
+
+  @@index([tenantId, nombre])
+  @@index([tenantId, telefono])
 }
 
 model Direccion {
@@ -107,6 +115,8 @@ model Direccion {
   cliente         Cliente         @relation(fields: [clienteId], references: [id])
   tenant          Tenant          @relation(fields: [tenantId], references: [id])
   ordenesServicio OrdenServicio[]
+
+  @@index([tenantId, clienteId])
 }
 
 model Servicio {
@@ -115,6 +125,7 @@ model Servicio {
   nombre    String
   activo    Boolean         @default(true)
   empresaId Int?
+  deleteAt  DateTime?       @db.Timestamptz(6)
   ordenes   OrdenServicio[]
   empresa   Empresa?        @relation(fields: [empresaId], references: [id])
   tenant    Tenant          @relation(fields: [tenantId], references: [id])
@@ -130,6 +141,8 @@ model TipoServicio {
   ordenes   OrdenServicio[]
   Empresa   Empresa?        @relation(fields: [empresaId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   tenant    Tenant          @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, activo])
 }
 
 model OrdenServicio {
@@ -175,6 +188,11 @@ model OrdenServicio {
   tenant             Tenant            @relation(fields: [tenantId], references: [id])
   tipoServicio       TipoServicio?     @relation(fields: [tipoServicioId], references: [id])
   zona               Zona?             @relation(fields: [zonaId], references: [id])
+
+  @@index([tenantId, id(sort: Desc)])
+  @@index([tenantId, estado])
+  @@index([tenantId, tipoServicioId])
+  @@index([tenantId, fechaVisita])
 }
 
 model Geolocalizacion {

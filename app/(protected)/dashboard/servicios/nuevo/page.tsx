@@ -538,7 +538,7 @@ export default function NuevoServicioPage() {
                   htmlFor="horaInicio"
                   className="text-sm font-medium text-slate-700"
                 >
-                  Hora de Inicio Estimada (24h)
+                  Hora de Inicio Estimada (12h)
                 </Label>
                 <Input
                   id="horaInicio"

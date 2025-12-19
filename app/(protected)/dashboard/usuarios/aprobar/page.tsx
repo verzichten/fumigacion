@@ -31,7 +31,7 @@ interface UsuarioPendiente {
   apellido: string;
   email: string;
   username: string;
-  rol: string;
+  rol: string | null; // Changed to allow null
   createdAt: Date;
   tipoDocumento: string | null;
   numeroDocumento: string | null;
@@ -250,7 +250,7 @@ export default function AprobarUsuariosPage() {
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
                           <Badge variant="outline" className="w-fit border-slate-200 bg-slate-50 font-normal text-slate-600">
-                            {usuario.rol}
+                            {usuario.rol || "No asignado"}
                           </Badge>
                           {usuario.empresa ? (
                             <span className="text-xs text-slate-600 font-medium">{usuario.empresa.nombre}</span>

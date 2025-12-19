@@ -30,7 +30,7 @@ interface Tecnico {
   nombre: string | null;
   apellido: string | null;
   email: string;
-  rol: "ADMIN" | "TECNICO" | "ASESOR";
+  rol: "ADMIN" | "TECNICO" | "ASESOR" | null;
   telefono: string | null;
   createdAt: Date;
 }

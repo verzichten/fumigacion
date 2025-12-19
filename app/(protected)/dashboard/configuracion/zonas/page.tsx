@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Search, MapPin, Trash2, Edit } from "lucide-react";
+import { Plus, Search, MapPin, Trash2, Edit, Power } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,6 +100,27 @@ export default function ZonasPage() {
       fetchZonas();
     }
     setIsSubmitting(false);
+  };
+
+  const handleToggleEstado = async (zona: Zona) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const data = new FormData();
+    data.append("nombre", zona.nombre); // Keep current name
+    if (!zona.estado) { // If currently NOT active, we want to activate it
+      data.append("estado", "on");
+    }
+    
+    toast.promise(updateZona(token, zona.id, data), {
+      loading: 'Actualizando estado...',
+      success: (result) => {
+        if (result.error) throw new Error(result.error);
+        fetchZonas();
+        return `Zona ${!zona.estado ? 'activada' : 'desactivada'} correctamente`;
+      },
+      error: (err) => `Error: ${err.message}`
+    });
   };
 
   const handleDeleteClick = (id: number) => {
@@ -201,118 +222,127 @@ export default function ZonasPage() {
                                             {zona.estado ? "Activo" : "Inactivo"}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <Button 
-                                                variant="ghost" 
-                                                size="icon" 
-                                                className="hover:bg-slate-200"
-                                                onClick={() => handleOpenModal(zona)}
-                                            >
-                                                <Edit className="h-4 w-4 text-slate-500" />
-                                            </Button>
-                                            <Button 
-                                                variant="ghost" 
-                                                size="icon" 
-                                                className="hover:bg-slate-200 text-red-500 hover:text-red-700"
-                                                onClick={() => handleDeleteClick(zona.id)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
+                                                                         <td className="px-6 py-4 text-right">
+                                                                            <div className="flex justify-end gap-2">
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className={`hover:bg-slate-200 ${zona.estado ? "text-green-600 hover:text-green-700" : "text-slate-400 hover:text-slate-600"}`}
+                                                                                    title={zona.estado ? "Desactivar zona" : "Activar zona"}
+                                                                                    onClick={() => handleToggleEstado(zona)}
+                                                                                >
+                                                                                    <Power className="h-4 w-4" />
+                                                                                </Button>
+                                                                                <Button 
+                                                                                    variant="ghost" 
+                                                                                    size="icon" 
+                                                                                    className="hover:bg-slate-200"
+                                                                                    onClick={() => handleOpenModal(zona)}
+                                                                                >
+                                                                                    <Edit className="h-4 w-4 text-slate-500" />
+                                                                                </Button>
+                                                                                <Button 
+                                                                                    variant="ghost" 
+                                                                                    size="icon" 
+                                                                                    className="hover:bg-slate-200 text-red-500 hover:text-red-700"
+                                                                                    onClick={() => handleDeleteClick(zona.id)}
+                                                                                >
+                                                                                    <Trash2 className="h-4 w-4" />
+                                                                                </Button>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                )}
+                                            </div>
+                                          </div>
+                                    
+                                          {/* Create/Edit Modal */}
+                                          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                                            <DialogContent className="sm:max-w-[425px]">
+                                                <DialogHeader>
+                                                    <DialogTitle>{editingZona ? "Editar Zona" : "Nueva Zona"}</DialogTitle>
+                                                    <DialogDescription>
+                                                        {editingZona ? "Modifica los datos de la zona." : "Ingresa los datos para crear una nueva zona."}
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <form onSubmit={handleSubmit}>
+                                                    <div className="grid gap-4 py-4">
+                                                        <div className="grid grid-cols-4 items-center gap-4">
+                                                            <Label htmlFor="nombre" className="text-right">
+                                                                Nombre
+                                                            </Label>
+                                                            <Input
+                                                                id="nombre"
+                                                                value={formData.nombre}
+                                                                onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                                                                className="col-span-3"
+                                                                required
+                                                            />
+                                                        </div>
+                                                        <div className="grid grid-cols-4 items-center gap-4">
+                                                            <Label htmlFor="estado" className="text-right">
+                                                                Estado
+                                                            </Label>
+                                                            <div className="col-span-3 flex items-center space-x-2">
+                                                                <Checkbox 
+                                                                    id="estado" 
+                                                                    checked={formData.estado}
+                                                                    onCheckedChange={(checked) => setFormData({...formData, estado: checked as boolean})}
+                                                                />
+                                                                <label
+                                                                    htmlFor="estado"
+                                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                                                >
+                                                                    Activo
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <DialogFooter>
+                                                        <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                                                            Cancelar
+                                                        </Button>
+                                                        <Button type="submit" disabled={isSubmitting}>
+                                                            {isSubmitting ? "Guardando..." : "Guardar"}
+                                                        </Button>
+                                                    </DialogFooter>
+                                                </form>
+                                            </DialogContent>
+                                          </Dialog>
+                                    
+                                          {/* Delete Confirmation Modal */}
+                                          <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+                                            <DialogContent className="sm:max-w-md">
+                                              <DialogHeader>
+                                                <DialogTitle>¿Estás seguro?</DialogTitle>
+                                                <DialogDescription>
+                                                  Esta acción eliminará la zona de la lista. Si hay órdenes asociadas, estas mantendrán el registro histórico, pero la zona no podrá seleccionarse en nuevos registros.
+                                                </DialogDescription>
+                                              </DialogHeader>
+                                              <DialogFooter className="flex gap-2 sm:justify-end">
+                                                <Button
+                                                  type="button"
+                                                  variant="outline"
+                                                  onClick={() => setIsDeleteModalOpen(false)}
+                                                  disabled={isDeleting}
+                                                >
+                                                  Cancelar
+                                                </Button>
+                                                <Button
+                                                  type="button"
+                                                  variant="destructive"
+                                                  onClick={confirmDelete}
+                                                  disabled={isDeleting}
+                                                >
+                                                  {isDeleting ? "Eliminando..." : "Eliminar"}
+                                                </Button>
+                                              </DialogFooter>
+                                            </DialogContent>
+                                          </Dialog>
                                         </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </div>
-      </div>
-
-      {/* Create/Edit Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-                <DialogTitle>{editingZona ? "Editar Zona" : "Nueva Zona"}</DialogTitle>
-                <DialogDescription>
-                    {editingZona ? "Modifica los datos de la zona." : "Ingresa los datos para crear una nueva zona."}
-                </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit}>
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="nombre" className="text-right">
-                            Nombre
-                        </Label>
-                        <Input
-                            id="nombre"
-                            value={formData.nombre}
-                            onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                            className="col-span-3"
-                            required
-                        />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="estado" className="text-right">
-                            Estado
-                        </Label>
-                        <div className="col-span-3 flex items-center space-x-2">
-                            <Checkbox 
-                                id="estado" 
-                                checked={formData.estado}
-                                onCheckedChange={(checked) => setFormData({...formData, estado: checked as boolean})}
-                            />
-                            <label
-                                htmlFor="estado"
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                                Activo
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-                        Cancelar
-                    </Button>
-                    <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? "Guardando..." : "Guardar"}
-                    </Button>
-                </DialogFooter>
-            </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Modal */}
-      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>¿Estás seguro?</DialogTitle>
-            <DialogDescription>
-              Esta acción eliminará la zona. Si hay órdenes asociadas, estas mantendrán el registro histórico, pero la zona no podrá seleccionarse en nuevos registros.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex gap-2 sm:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsDeleteModalOpen(false)}
-              disabled={isDeleting}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={confirmDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Eliminando..." : "Eliminar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+                                      );
+                                    }

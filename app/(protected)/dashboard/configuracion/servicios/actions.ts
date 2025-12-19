@@ -24,6 +24,7 @@ export async function getServicios(token: string) {
     const servicios = await prisma.servicio.findMany({
       where: {
         tenantId: usuario.tenantId,
+        deleteAt: null,
       },
       orderBy: {
         nombre: "asc",
@@ -186,7 +187,7 @@ export async function deleteServicio(token: string, id: number) {
       await prisma.servicio.update({
         where: { id, tenantId: usuario.tenantId },
         data: {
-            activo: false // Soft delete
+            deleteAt: new Date(),
         }
       });
   

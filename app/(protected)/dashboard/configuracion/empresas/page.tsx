@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Search, Building2, Trash2, Edit, Eye, Package, User } from "lucide-react"; 
+import { Plus, Search, Building2, Trash2, Edit, Eye, Package, User, Power } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ import { getEmpresas, createEmpresa, updateEmpresa, deleteEmpresa, getEmpresaSer
 interface Empresa {
   id: number;
   nombre: string;
+  estado: boolean | null;
   _count: {
     servicios: number;
     usuarios: number;
@@ -38,7 +40,7 @@ interface Usuario {
   nombre: string;
   apellido: string;
   username: string;
-  rol: string;
+  rol: string | null;
 }
 
 export default function EmpresasPage() {
@@ -49,7 +51,7 @@ export default function EmpresasPage() {
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmpresa, setEditingEmpresa] = useState<Empresa | null>(null);
-  const [formData, setFormData] = useState({ nombre: "" });
+  const [formData, setFormData] = useState({ nombre: "", estado: true });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Delete states
@@ -95,10 +97,10 @@ export default function EmpresasPage() {
   const handleOpenModal = (empresa?: Empresa) => {
     if (empresa) {
       setEditingEmpresa(empresa);
-      setFormData({ nombre: empresa.nombre });
+      setFormData({ nombre: empresa.nombre, estado: empresa.estado ?? false });
     } else {
       setEditingEmpresa(null);
-      setFormData({ nombre: "" });
+      setFormData({ nombre: "", estado: true });
     }
     setIsModalOpen(true);
   };
@@ -112,6 +114,7 @@ export default function EmpresasPage() {
 
     const data = new FormData();
     data.append("nombre", formData.nombre);
+    if (formData.estado) data.append("estado", "on");
 
     let result;
     if (editingEmpresa) {
@@ -128,6 +131,27 @@ export default function EmpresasPage() {
       fetchEmpresas();
     }
     setIsSubmitting(false);
+  };
+
+  const handleToggleEstado = async (empresa: Empresa) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const data = new FormData();
+    data.append("nombre", empresa.nombre);
+    if (!empresa.estado) {
+      data.append("estado", "on");
+    }
+
+    toast.promise(updateEmpresa(token, empresa.id, data), {
+      loading: 'Actualizando estado...',
+      success: (result) => {
+        if (result.error) throw new Error(result.error);
+        fetchEmpresas();
+        return `Empresa ${!empresa.estado ? 'activada' : 'desactivada'} correctamente`;
+      },
+      error: (err) => `Error: ${err.message}`
+    });
   };
 
   const handleDeleteClick = (id: number) => {
@@ -248,6 +272,7 @@ export default function EmpresasPage() {
                         <thead className="bg-slate-50 text-slate-700 border-b border-slate-200 font-medium">
                             <tr>
                                 <th className="px-6 py-4">Nombre</th>
+                                <th className="px-6 py-4">Estado</th>
                                 <th className="px-6 py-4">Registros Asociados</th>
                                 <th className="px-6 py-4 text-right">Acciones</th>
                             </tr>
@@ -259,6 +284,13 @@ export default function EmpresasPage() {
                                 <tr key={empresa.id} className="hover:bg-slate-50 transition-colors">
                                     <td className="px-6 py-4 font-medium text-slate-900">
                                         {empresa.nombre}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                            empresa.estado ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-800"
+                                        }`}>
+                                            {empresa.estado ? "Activo" : "Inactivo"}
+                                        </span>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex gap-2 items-center">
@@ -289,6 +321,15 @@ export default function EmpresasPage() {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className={`hover:bg-slate-200 ${empresa.estado ? "text-green-600 hover:text-green-700" : "text-slate-400 hover:text-slate-600"}`}
+                                                title={empresa.estado ? "Desactivar empresa" : "Activar empresa"}
+                                                onClick={() => handleToggleEstado(empresa)}
+                                            >
+                                                <Power className="h-4 w-4" />
+                                            </Button>
                                             <Button 
                                                 variant="ghost" 
                                                 size="icon" 
@@ -340,6 +381,24 @@ export default function EmpresasPage() {
                             className="col-span-3"
                             required
                         />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="estado" className="text-right">
+                            Estado
+                        </Label>
+                        <div className="col-span-3 flex items-center space-x-2">
+                            <Checkbox 
+                                id="estado" 
+                                checked={formData.estado}
+                                onCheckedChange={(checked) => setFormData({...formData, estado: checked as boolean})}
+                            />
+                            <label
+                                htmlFor="estado"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                                Activo
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <DialogFooter>

@@ -116,6 +116,8 @@ export default function SignUpPage() {
         throw new Error(data.message || 'Error al registrar usuario')
       }
 
+      localStorage.setItem("user", JSON.stringify(data.user));
+
       toast.success("Cuenta creada exitosamente");
       router.push("/verificacion"); 
 

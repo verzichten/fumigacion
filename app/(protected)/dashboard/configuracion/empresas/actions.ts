@@ -60,6 +60,7 @@ export async function createEmpresa(token: string, formData: FormData) {
     }
 
     const nombre = formData.get("nombre") as string;
+    const estado = formData.get("estado") === "on";
 
     if (!nombre || nombre.trim() === "") {
         return { error: "El nombre es obligatorio" };
@@ -69,6 +70,7 @@ export async function createEmpresa(token: string, formData: FormData) {
       data: {
         tenantId: usuario.tenantId,
         nombre: nombre.trim(),
+        estado,
       },
     });
 
@@ -98,6 +100,7 @@ export async function updateEmpresa(token: string, id: number, formData: FormDat
     }
 
     const nombre = formData.get("nombre") as string;
+    const estado = formData.get("estado") === "on";
 
     if (!nombre || nombre.trim() === "") {
         return { error: "El nombre es obligatorio" };
@@ -107,6 +110,7 @@ export async function updateEmpresa(token: string, id: number, formData: FormDat
         where: { id, tenantId: usuario.tenantId },
         data: {
             nombre: nombre.trim(),
+            estado,
         }
     });
 

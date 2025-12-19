@@ -30,7 +30,7 @@ interface Asesor {
   nombre: string | null;
   apellido: string | null;
   email: string;
-  rol: "ADMIN" | "ASESOR" | "TECNICO";
+  rol: "ADMIN" | "ASESOR" | "TECNICO" | null;
   telefono: string | null;
   createdAt: Date;
 }

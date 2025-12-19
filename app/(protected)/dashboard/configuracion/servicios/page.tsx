@@ -196,7 +196,7 @@ export default function ServiciosPage() {
   const filteredServicios = servicios.filter(s => 
     s.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.empresa?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ).sort((a, b) => a.id - b.id);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -405,7 +405,7 @@ export default function ServiciosPage() {
           <DialogHeader>
             <DialogTitle>¿Estás seguro?</DialogTitle>
             <DialogDescription>
-              Esta acción desactivará el servicio. No se podrá seleccionar en nuevas órdenes, pero las órdenes existentes que lo usen no se verán afectadas.
+              Esta acción eliminará el servicio de la lista. No se podrá seleccionar en nuevas órdenes, pero las órdenes existentes que lo usen no se verán afectadas.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-2 sm:justify-end">
@@ -423,7 +423,7 @@ export default function ServiciosPage() {
               onClick={confirmDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? "Desactivando..." : "Desactivar"}
+              {isDeleting ? "Eliminando..." : "Eliminar"}
             </Button>
           </DialogFooter>
         </DialogContent>

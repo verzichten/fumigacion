@@ -63,7 +63,6 @@ export async function POST(request: Request) {
         tipoDocumento,
         numeroDocumento,
         telefono,
-        rol: Rol.TECNICO, // Rol por defecto
         activo: true,
         tenantId: 1, // Asignar al tenant por defecto
       },

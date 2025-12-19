@@ -47,6 +47,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!user.rol) {
+      return NextResponse.json(
+        { message: "El usuario no tiene un rol asignado." },
+        { status: 403 }
+      );
+    }
+
     // Generar token
     const token = signToken({
       userId: user.id,
