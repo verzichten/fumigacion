@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { Rol, EstadoServicio } from "@prisma/client";
+import { redis, isRedisConfigured } from "@/lib/redis";
 
 // --- Funciones para el Listado de Órdenes (Page principal) ---
 
@@ -116,6 +117,10 @@ export async function deleteOrdenServicio(token: string, id: number) {
       where: { id, tenantId: usuario.tenantId },
     });
 
+    if (isRedisConfigured()) {
+      await redis.del(`stats:ordenes:${usuario.tenantId}`);
+    }
+
     revalidatePath("/dashboard/servicios");
     return { success: true, message: "Orden eliminada exitosamente" };
   } catch (error) {
@@ -137,6 +142,13 @@ export async function getOrdenesStats(token: string) {
     if (!usuario) return { error: "Usuario no encontrado" };
 
     const tenantId = usuario.tenantId;
+
+    if (isRedisConfigured()) {
+      const cachedStats = await redis.get(`stats:ordenes:${tenantId}`);
+      if (cachedStats) {
+        return { stats: JSON.parse(cachedStats) };
+      }
+    }
 
     // Usar una sola consulta agregada en lugar de 5 consultas separadas
     const [stats, noConcretados] = await Promise.all([
@@ -163,14 +175,20 @@ export async function getOrdenesStats(token: string) {
     const finalizadas =
       stats.find((s) => s.estado === "SERVICIO_LISTO")?._count || 0;
 
+    const resultStats = {
+      totalOrdenes,
+      programadas,
+      enProceso,
+      finalizadas,
+      noConcretados,
+    };
+
+    if (isRedisConfigured()) {
+      await redis.set(`stats:ordenes:${tenantId}`, JSON.stringify(resultStats), 'EX', 300);
+    }
+
     return {
-      stats: {
-        totalOrdenes,
-        programadas,
-        enProceso,
-        finalizadas,
-        noConcretados,
-      },
+      stats: resultStats,
     };
   } catch (error) {
     console.error("Error stats:", error);
@@ -194,6 +212,13 @@ export async function getFilterData(token: string) {
     if (!usuario) return { error: "Usuario no encontrado" };
     const tenantId = usuario.tenantId;
 
+    if (isRedisConfigured()) {
+      const cachedFilters = await redis.get(`filters:data:${tenantId}`);
+      if (cachedFilters) {
+        return JSON.parse(cachedFilters);
+      }
+    }
+
     // Solo las consultas necesarias para filtros
     const [tiposServicios, creadores, empresas] = await Promise.all([
       prisma.tipoServicio.findMany({
@@ -210,11 +235,17 @@ export async function getFilterData(token: string) {
       }),
     ]);
 
-    return {
+    const resultFilters = {
       tiposServicios,
       creadores,
       empresas,
     };
+
+    if (isRedisConfigured()) {
+      await redis.set(`filters:data:${tenantId}`, JSON.stringify(resultFilters), 'EX', 3600);
+    }
+
+    return resultFilters;
   } catch (error) {
     console.error("Error getFilterData:", error);
     return { error: "Error al cargar datos de filtros" };
@@ -423,6 +454,11 @@ export async function createOrdenServicio(token: string, formData: FormData) {
     });
 
     revalidatePath("/dashboard/servicios");
+    
+    if (isRedisConfigured()) {
+      await redis.del(`stats:ordenes:${usuario.tenantId}`);
+    }
+
     return { success: true, message: "Orden de servicio creada correctamente" };
   } catch (error) {
     console.error("Error creating orden:", error);
@@ -531,6 +567,11 @@ export async function updateOrdenServicio(
     });
 
     revalidatePath("/dashboard/servicios");
+
+    if (isRedisConfigured()) {
+      await redis.del(`stats:ordenes:${usuario.tenantId}`);
+    }
+
     return {
       success: true,
       message: "Orden de servicio actualizada correctamente",
@@ -538,5 +579,68 @@ export async function updateOrdenServicio(
   } catch (error) {
     console.error("Error updating orden:", error);
     return { error: "Error al actualizar la orden de servicio" };
+  }
+}
+
+export async function sendServiceToTechnician(token: string, ordenId: number, message: string) {
+  const payload = verifyToken(token);
+  if (!payload) return { error: "No autorizado" };
+
+  try {
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: payload.userId },
+      select: { tenantId: true },
+    });
+
+    if (!usuario) return { error: "Usuario no encontrado" };
+
+    const orden = await prisma.ordenServicio.findUnique({
+      where: { id: ordenId, tenantId: usuario.tenantId },
+      include: {
+        tecnico: true,
+      },
+    });
+
+    if (!orden) return { error: "Orden no encontrada" };
+
+    if (!orden.tecnicoId) return { error: "La orden no tiene técnico asignado" };
+
+    // Fetch full technician data directly from Usuario table to get sensitive fields
+    const tecnico = await prisma.usuario.findUnique({
+      where: { id: orden.tecnicoId },
+      select: {
+        numberId: true,
+        whatsappGroupId: true,
+      }
+    });
+
+    if (!tecnico) return { error: "Técnico no encontrado en el sistema" };
+
+    if (!tecnico.numberId || !tecnico.whatsappGroupId) {
+      return { error: "El técnico no tiene configurado numberId o whatsappGroupId" };
+    }
+
+    const webhookUrl = "https://cobrocartera-n8n.hrymiz.easypanel.host/webhook-test/send-service-worker";
+    
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message,
+        numberId: tecnico.numberId,
+        whatsappGroupId: tecnico.whatsappGroupId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Webhook error: ${response.statusText}`);
+    }
+
+    return { success: true, message: "Información enviada al técnico correctamente" };
+  } catch (error) {
+    console.error("Error sending to technician:", error);
+    return { error: "Error al enviar la información al técnico" };
   }
 }

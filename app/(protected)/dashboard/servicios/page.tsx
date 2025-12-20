@@ -21,10 +21,22 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  MoreHorizontal,
+  Copy,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import {
   getOrdenesServicio,
@@ -32,6 +44,7 @@ import {
   getOrdenesStats,
   getOrdenServicio,
   getFilterData,
+  sendServiceToTechnician,
 } from "./actions";
 import {
   Dialog,
@@ -195,6 +208,159 @@ export default function ServiciosPage() {
     if (!open) {
       setSelectedOrden(null);
     }
+  };
+
+  const handleCopyOrden = (orden: OrdenServicio) => {
+    const info = [
+      `*Cliente:* ${orden.cliente.nombre} ${orden.cliente.apellido}`,
+      `*Servicio:* ${orden.servicio.nombre}`,
+      `*Tipo de Servicio:* ${orden.tipoServicio?.nombre || "N/A"}`,
+      `*Fecha Visita:* ${
+        orden.fechaVisita
+          ? new Date(orden.fechaVisita).toLocaleDateString("es-CO")
+          : "Sin programar"
+      }`,
+      `*Hora:* ${
+        orden.horaInicio
+          ? new Date(orden.horaInicio).toLocaleTimeString("es-CO", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })
+          : "--:--"
+      }`,
+      `*Dirección:* ${orden.direccionTexto}`,
+      `*Municipio:* ${orden.municipio || "N/A"}`,
+      `*Barrio:* ${orden.barrio || "N/A"}`,
+      `*Detalles:* ${
+        [
+          orden.bloque && `Bloque: ${orden.bloque}`,
+          orden.piso && `Piso: ${orden.piso}`,
+          orden.unidad && `Unidad: ${orden.unidad}`,
+        ]
+          .filter(Boolean)
+          .join(" - ") || "N/A"
+      }`,
+      `*Valor Cotizado:* ${
+        orden.valorCotizado
+          ? new Intl.NumberFormat("es-CO", {
+              style: "currency",
+              currency: "COP",
+              maximumFractionDigits: 0,
+            }).format(orden.valorCotizado)
+          : "$ 0"
+      }`,
+      `*Observaciones:* ${orden.observacion || "Sin observaciones"}`,
+    ].join("\n");
+
+    navigator.clipboard.writeText(info);
+    toast.success("Información copiada al portapapeles");
+  };
+
+  const handleSendToTechnician = async (orden: OrdenServicio) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("No autorizado");
+      return;
+    }
+
+    const info = [
+      `*Cliente:* ${orden.cliente.nombre} ${orden.cliente.apellido}`,
+      `*Servicio:* ${orden.servicio.nombre}`,
+      `*Tipo de Servicio:* ${orden.tipoServicio?.nombre || "N/A"}`,
+      `*Fecha Visita:* ${
+        orden.fechaVisita
+          ? new Date(orden.fechaVisita).toLocaleDateString("es-CO")
+          : "Sin programar"
+      }`,
+      `*Hora:* ${
+        orden.horaInicio
+          ? new Date(orden.horaInicio).toLocaleTimeString("es-CO", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })
+          : "--:--"
+      }`,
+      `*Dirección:* ${orden.direccionTexto}`,
+      `*Municipio:* ${orden.municipio || "N/A"}`,
+      `*Barrio:* ${orden.barrio || "N/A"}`,
+      `*Detalles:* ${
+        [
+          orden.bloque && `Bloque: ${orden.bloque}`,
+          orden.piso && `Piso: ${orden.piso}`,
+          orden.unidad && `Unidad: ${orden.unidad}`,
+        ]
+          .filter(Boolean)
+          .join(" - ") || "N/A"
+      }`,
+      `*Valor Cotizado:* ${
+        orden.valorCotizado
+          ? new Intl.NumberFormat("es-CO", {
+              style: "currency",
+              currency: "COP",
+              maximumFractionDigits: 0,
+            }).format(orden.valorCotizado)
+          : "$ 0"
+      }`,
+      `*Observaciones:* ${orden.observacion || "Sin observaciones"}`,
+    ].join("\n");
+
+    const toastId = toast.loading("Enviando información...");
+
+    const result = await sendServiceToTechnician(token, orden.id, info);
+
+    if (result.error) {
+      toast.error(result.error, { id: toastId });
+    } else {
+      toast.success(result.message, { id: toastId });
+    }
+  };
+
+  const handleNotifyClient = (orden: OrdenServicio) => {
+    if (!orden.cliente.telefono) {
+      toast.error("El cliente no tiene número de teléfono registrado");
+      return;
+    }
+
+    // Limpiar el número de teléfono (dejar solo dígitos)
+    let phone = orden.cliente.telefono.replace(/\D/g, "");
+    
+    // Asumir código de país Colombia (57) si no lo tiene y tiene 10 dígitos (celular)
+    if (phone.length === 10) {
+      phone = `57${phone}`;
+    }
+
+    const fecha = orden.fechaVisita
+      ? new Date(orden.fechaVisita).toLocaleDateString("es-CO")
+      : "Fecha por definir";
+      
+    const hora = orden.horaInicio
+      ? new Date(orden.horaInicio).toLocaleTimeString("es-CO", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        })
+      : "Hora por definir";
+
+    const tecnicoNombre = orden.tecnico 
+      ? `${orden.tecnico.nombre} ${orden.tecnico.apellido}` 
+      : "Por asignar";
+
+    const empresaNombre = orden.empresa?.nombre || "Nuestra Empresa";
+
+    const message = `Hola *${orden.cliente.nombre} ${orden.cliente.apellido}*, le saludamos de *${empresaNombre}*.
+    
+Le recordamos su servicio de *${orden.servicio.nombre}* programado para:
+📅 *Fecha:* ${fecha}
+⏰ *Hora:* ${hora}
+📍 *Dirección:* ${orden.direccionTexto}
+👨‍🔧 *Técnico:* ${tecnicoNombre}
+
+Cualquier inquietud, estamos atentos.`;
+
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
   };
 
   const handleDeleteClick = (id: number) => {
@@ -807,36 +973,57 @@ export default function ServiciosPage() {
                           {getStatusBadge(orden.estado)}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="hover:bg-slate-200"
-                              onClick={() => handleViewOrden(orden.id)}
-                            >
-                              <Eye className="h-4 w-4 text-slate-500" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="hover:bg-slate-200"
-                              onClick={() =>
-                                router.push(
-                                  `/dashboard/servicios/${orden.id}/editar`,
-                                )
-                              }
-                            >
-                              <Edit className="h-4 w-4 text-slate-500" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="hover:bg-slate-200 text-red-500 hover:text-red-700"
-                              onClick={() => handleDeleteClick(orden.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Abrir menú</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                              <DropdownMenuItem
+                                onClick={() => handleViewOrden(orden.id)}
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                Ver detalle
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/servicios/${orden.id}/editar`,
+                                  )
+                                }
+                              >
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleCopyOrden(orden)}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                Copiar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleNotifyClient(orden)}
+                              >
+                                <MessageCircle className="mr-2 h-4 w-4 text-blue-600" />
+                                Notificar al Cliente
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleSendToTechnician(orden)}
+                              >
+                                <MessageCircle className="mr-2 h-4 w-4 text-green-600" />
+                                Enviar al Técnico
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteClick(orden.id)}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                       </tr>
                     ))}

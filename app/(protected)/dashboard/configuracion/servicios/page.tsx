@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getServicios, createServicio, updateServicio, deleteServicio, getEmpresasOptions } from "./actions";
+import { useUserRole } from "@/hooks/use-user-role";
 
 interface Empresa {
   id: number;
@@ -45,6 +46,7 @@ export default function ServiciosPage() {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const { role, loading: roleLoading } = useUserRole();
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -66,6 +68,13 @@ export default function ServiciosPage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const router = useRouter();
+
+  useEffect(() => {
+    if (!roleLoading && role !== "ADMIN") {
+      toast.error("Acceso denegado. Solo administradores pueden configurar servicios.");
+      router.push("/dashboard");
+    }
+  }, [role, roleLoading, router]);
 
   const fetchData = async () => {
     const token = localStorage.getItem("token");
@@ -94,8 +103,18 @@ export default function ServiciosPage() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (role === "ADMIN") {
+      fetchData();
+    }
+  }, [role]);
+
+  if (roleLoading || role !== "ADMIN") {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const handleOpenModal = (servicio?: Servicio) => {
     if (servicio) {

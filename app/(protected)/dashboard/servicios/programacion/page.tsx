@@ -22,6 +22,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getTecnicos } from "../../usuarios/tecnicos/actions";
 
 interface OrdenServicio {
   id: number;
@@ -40,11 +48,19 @@ interface OrdenServicio {
   zona: { nombre: string } | null;
 }
 
+interface Tecnico {
+  id: number;
+  nombre: string;
+  apellido: string;
+}
+
 export default function ProgramacionPage() {
   const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [ordenes, setOrdenes] = useState<OrdenServicio[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tecnicos, setTecnicos] = useState<Tecnico[]>([]);
+  const [selectedTecnicoId, setSelectedTecnicoId] = useState<string>("all");
 
   // Helper to get start and end of week (Monday to Sunday)
   const getWeekRange = (date: Date) => {
@@ -66,6 +82,19 @@ export default function ProgramacionPage() {
     [currentDate],
   );
 
+  const fetchTecnicos = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const result = await getTecnicos(token);
+    if (result.tecnicos) {
+      setTecnicos(result.tecnicos);
+    }
+  };
+
+  useEffect(() => {
+    fetchTecnicos();
+  }, []);
+
   const fetchOrdenes = async () => {
     setLoading(true);
     const token = localStorage.getItem("token");
@@ -74,7 +103,9 @@ export default function ProgramacionPage() {
       return;
     }
 
-    const result = await getOrdenesByDateRange(token, weekStart, weekEnd);
+    const tecnicoId = selectedTecnicoId === "all" ? undefined : Number(selectedTecnicoId);
+
+    const result = await getOrdenesByDateRange(token, weekStart, weekEnd, tecnicoId);
     if (result.error) {
       toast.error(result.error);
     } else if (result.ordenes) {
@@ -85,7 +116,7 @@ export default function ProgramacionPage() {
 
   useEffect(() => {
     fetchOrdenes();
-  }, [weekStart, weekEnd]);
+  }, [weekStart, weekEnd, selectedTecnicoId]);
 
   const handlePrevWeek = () => {
     const newDate = new Date(currentDate);
@@ -192,44 +223,65 @@ export default function ProgramacionPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg border border-slate-200">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handlePrevWeek}
-              className="h-8 w-8"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleToday}
-              className="h-8 px-3 font-medium text-sm"
-            >
-              Hoy
-            </Button>
-            <div className="h-4 w-[1px] bg-slate-300 mx-1" />
-            <span className="text-sm font-medium px-2 min-w-[140px] text-center">
-              {weekStart.toLocaleDateString("es-CO", {
-                month: "short",
-                day: "numeric",
-              })}{" "}
-              -{" "}
-              {weekEnd.toLocaleDateString("es-CO", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleNextWeek}
-              className="h-8 w-8"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="w-full sm:w-[200px]">
+              <Select
+                value={selectedTecnicoId}
+                onValueChange={setSelectedTecnicoId}
+              >
+                <SelectTrigger className="w-full bg-white">
+                  <SelectValue placeholder="Filtrar por técnico" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los técnicos</SelectItem>
+                  {tecnicos.map((tecnico) => (
+                    <SelectItem key={tecnico.id} value={tecnico.id.toString()}>
+                      {tecnico.nombre} {tecnico.apellido}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg border border-slate-200">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePrevWeek}
+                className="h-8 w-8"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToday}
+                className="h-8 px-3 font-medium text-sm"
+              >
+                Hoy
+              </Button>
+              <div className="h-4 w-[1px] bg-slate-300 mx-1" />
+              <span className="text-sm font-medium px-2 min-w-[140px] text-center">
+                {weekStart.toLocaleDateString("es-CO", {
+                  month: "short",
+                  day: "numeric",
+                })}{" "}
+                -{" "}
+                {weekEnd.toLocaleDateString("es-CO", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleNextWeek}
+                className="h-8 w-8"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createUsuario, getEmpresasOptions } from "../actions";
+import { useUserRole } from "@/hooks/use-user-role";
 
 interface Empresa {
   id: number;
@@ -24,6 +25,7 @@ interface Empresa {
 
 export default function NuevoUsuarioPage() {
   const router = useRouter();
+  const { role, loading: roleLoading } = useUserRole();
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -41,6 +43,13 @@ export default function NuevoUsuarioPage() {
   });
 
   useEffect(() => {
+    if (!roleLoading && role !== "ADMIN") {
+      toast.error("Acceso denegado. Solo administradores pueden crear usuarios.");
+      router.push("/dashboard");
+    }
+  }, [role, roleLoading, router]);
+
+  useEffect(() => {
     const fetchOptions = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -52,8 +61,19 @@ export default function NuevoUsuarioPage() {
         setEmpresas(res.empresas);
       }
     };
-    fetchOptions();
-  }, [router]);
+
+    if (role === "ADMIN") {
+      fetchOptions();
+    }
+  }, [router, role]);
+
+  if (roleLoading || role !== "ADMIN") {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const handleChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

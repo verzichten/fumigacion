@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 
-export async function getOrdenesByDateRange(token: string, startDate: Date, endDate: Date) {
+export async function getOrdenesByDateRange(token: string, startDate: Date, endDate: Date, tecnicoId?: number) {
   const payload = verifyToken(token);
   if (!payload) return { error: "No autorizado" };
 
@@ -14,14 +14,20 @@ export async function getOrdenesByDateRange(token: string, startDate: Date, endD
     });
     if (!usuario) return { error: "Usuario no encontrado" };
 
-    const ordenes = await prisma.ordenServicio.findMany({
-      where: {
-        tenantId: usuario.tenantId,
-        fechaVisita: {
-          gte: startDate,
-          lte: endDate,
-        },
+    const whereClause: any = {
+      tenantId: usuario.tenantId,
+      fechaVisita: {
+        gte: startDate,
+        lte: endDate,
       },
+    };
+
+    if (tecnicoId) {
+      whereClause.tecnicoId = tecnicoId;
+    }
+
+    const ordenes = await prisma.ordenServicio.findMany({
+      where: whereClause,
       include: {
         cliente: {
           select: { nombre: true, apellido: true },

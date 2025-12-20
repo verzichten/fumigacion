@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +31,7 @@ import {
   ArrowLeftRight,
   CheckCircle,
 } from "lucide-react";
+import { useUserRole } from "@/hooks/use-user-role";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -63,8 +64,9 @@ type MenuConfig = MenuItemWithHref | MenuItemWithSubItems;
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { role } = useUserRole();
 
-  const menuItems: MenuConfig[] = [
+  const allMenuItems: MenuConfig[] = [
     {
       key: "dashboard",
       label: "Dashboard",
@@ -115,7 +117,45 @@ export function Sidebar({ className }: SidebarProps) {
     },
   ];
 
-  const initialOpenMenus = menuItems.reduce((acc: Record<string, boolean>, menu) => {
+  const menuItems = useMemo(() => {
+    if (!role) return [];
+
+    return allMenuItems.map(item => {
+      // If it's a direct link, everyone (Admin/Asesor) has access if it's in the list
+      // (Technicians are blocked at layout level)
+      if (!item.items) return item;
+
+      // Filter sub-items
+      const filteredItems = item.items.filter(subItem => {
+        // Admin Only Links
+        const adminOnlyPaths = [
+          "/dashboard/usuarios/aprobar",
+          "/dashboard/usuarios/nuevo",
+          "/dashboard/configuracion/empresas",
+          "/dashboard/configuracion/servicios",
+          "/dashboard/configuracion/localidades",
+          "/dashboard/configuracion/zonas",
+        ];
+
+        if (adminOnlyPaths.includes(subItem.href)) {
+          return role === "ADMIN";
+        }
+
+        return true; // Default allow for others
+      });
+
+      return {
+        ...item,
+        items: filteredItems
+      };
+    }).filter(item => {
+        // If it was a parent item and now has no children, remove it
+        if (item.items && item.items.length === 0) return false;
+        return true;
+    }) as MenuConfig[];
+  }, [role]);
+
+  const initialOpenMenus = allMenuItems.reduce((acc: Record<string, boolean>, menu) => {
     if (menu.items && menu.items.length > 0) {
       const isActiveParent = menu.items.some(item => pathname.startsWith(item.href));
       acc[menu.key] = isActiveParent;

@@ -1,12 +1,33 @@
 "use client";
 
 import { municipiosAntioquia } from "@/lib/constants/municipios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useUserRole } from "@/hooks/use-user-role";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function LocalidadesPage() {
+  const { role, loading } = useUserRole();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && role !== "ADMIN") {
+      toast.error("Acceso denegado. Solo administradores pueden ver localidades.");
+      router.push("/dashboard");
+    }
+  }, [role, loading, router]);
+
+  if (loading || role !== "ADMIN") {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">

@@ -17,6 +17,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { getZonas, createZona, updateZona, deleteZona } from "./actions";
+import { useUserRole } from "@/hooks/use-user-role";
 
 interface Zona {
   id: number;
@@ -28,6 +29,7 @@ export default function ZonasPage() {
   const [zonas, setZonas] = useState<Zona[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const { role, loading: roleLoading } = useUserRole();
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,6 +43,13 @@ export default function ZonasPage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const router = useRouter();
+
+  useEffect(() => {
+    if (!roleLoading && role !== "ADMIN") {
+      toast.error("Acceso denegado. Solo administradores pueden configurar zonas.");
+      router.push("/dashboard");
+    }
+  }, [role, roleLoading, router]);
 
   const fetchZonas = async () => {
     const token = localStorage.getItem("token");
@@ -60,8 +69,18 @@ export default function ZonasPage() {
   };
 
   useEffect(() => {
-    fetchZonas();
-  }, []);
+    if (role === "ADMIN") {
+      fetchZonas();
+    }
+  }, [role]);
+
+  if (roleLoading || role !== "ADMIN") {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const handleOpenModal = (zona?: Zona) => {
     if (zona) {
