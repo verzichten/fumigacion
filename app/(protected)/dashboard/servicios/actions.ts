@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { Rol, EstadoServicio } from "@prisma/client";
-import { redis, isRedisConfigured } from "@/lib/redis";
+import { redis } from "@/lib/redis";
 
 // --- Funciones para el Listado de Órdenes (Page principal) ---
 
@@ -117,7 +117,7 @@ export async function deleteOrdenServicio(token: string, id: number) {
       where: { id, tenantId: usuario.tenantId },
     });
 
-    if (isRedisConfigured()) {
+    if (redis) {
       await redis.del(`stats:ordenes:${usuario.tenantId}`);
     }
 
@@ -143,7 +143,7 @@ export async function getOrdenesStats(token: string) {
 
     const tenantId = usuario.tenantId;
 
-    if (isRedisConfigured()) {
+    if (redis) {
       const cachedStats = await redis.get(`stats:ordenes:${tenantId}`);
       if (cachedStats) {
         return { stats: JSON.parse(cachedStats) };
@@ -183,7 +183,7 @@ export async function getOrdenesStats(token: string) {
       noConcretados,
     };
 
-    if (isRedisConfigured()) {
+    if (redis) {
       await redis.set(`stats:ordenes:${tenantId}`, JSON.stringify(resultStats), 'EX', 300);
     }
 
@@ -212,7 +212,7 @@ export async function getFilterData(token: string) {
     if (!usuario) return { error: "Usuario no encontrado" };
     const tenantId = usuario.tenantId;
 
-    if (isRedisConfigured()) {
+    if (redis) {
       const cachedFilters = await redis.get(`filters:data:${tenantId}`);
       if (cachedFilters) {
         return JSON.parse(cachedFilters);
@@ -241,7 +241,7 @@ export async function getFilterData(token: string) {
       empresas,
     };
 
-    if (isRedisConfigured()) {
+    if (redis) {
       await redis.set(`filters:data:${tenantId}`, JSON.stringify(resultFilters), 'EX', 3600);
     }
 
@@ -455,7 +455,7 @@ export async function createOrdenServicio(token: string, formData: FormData) {
 
     revalidatePath("/dashboard/servicios");
     
-    if (isRedisConfigured()) {
+    if (redis) {
       await redis.del(`stats:ordenes:${usuario.tenantId}`);
     }
 
@@ -568,7 +568,7 @@ export async function updateOrdenServicio(
 
     revalidatePath("/dashboard/servicios");
 
-    if (isRedisConfigured()) {
+    if (redis) {
       await redis.del(`stats:ordenes:${usuario.tenantId}`);
     }
 
